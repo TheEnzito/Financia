@@ -129,7 +129,7 @@ def barres_groupes(valeurs_pct: dict[str, float], cle: str, plan_pct: dict[str, 
                         marker=dict(symbol="line-ns", size=26, line=dict(width=3, color=style.TEXTE)),
                         hovertemplate="Repère %{y} : %{x:.0f} %<extra></extra>")
     fig = style.graphique(fig, max(190, 46 * len(groupes) + 90))
-    fig.update_xaxes(ticksuffix=" %", range=[0, maxi], showgrid=True, gridcolor="rgba(255,255,255,0.05)",
+    fig.update_xaxes(ticksuffix=" %", range=[0, maxi], showgrid=True, gridcolor=style.GRILLE,
                      domain=[0, 0.8], automargin=True)
     largeur_noms = 7 * max((len(g) for g in groupes), default=6) + 12  # place réservée aux noms, en pixels
     fig.update_yaxes(side="left", gridcolor="rgba(0,0,0,0)", automargin=True, tickfont=dict(color=style.TEXTE))
@@ -237,7 +237,7 @@ def _sankey(sources: dict[str, float], branches: list[tuple[str, str, float]], b
     fig.update_layout(height=hauteur, margin=dict(l=8, r=8, t=12, b=12),
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", separators=", ",
                       font=dict(family=style.POLICE, color=style.TEXTE),
-                      hoverlabel=dict(bgcolor="#161616", font=dict(color=style.TEXTE)))
+                      hoverlabel=dict(bgcolor=style.PANNEAU_2, font=dict(color=style.TEXTE)))
     return fig
 
 
@@ -712,7 +712,7 @@ def onglet_tendances(mvts: pd.DataFrame, base: str) -> None:
         fig = go.Figure(go.Treemap(
             labels=cumul.index, parents=[""] * len(cumul), values=cumul.values,
             marker=dict(colors=[style.PALETTE[i % len(style.PALETTE)] for i in range(len(cumul))],
-                        cornerradius=12, line=dict(color="#111111", width=3)),
+                        cornerradius=12, line=dict(color=style.PANNEAU, width=3)),
             texttemplate="<b>%{label}</b><br>%{value:,.0f}<br>%{percentRoot:.2%}",
             hovertemplate="%{label} : %{value:,.0f}<extra></extra>"))
         st.plotly_chart(style.graphique(fig, 340, legende=False).update_layout(margin=dict(l=0, r=0, t=0, b=0)),

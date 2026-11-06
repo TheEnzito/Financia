@@ -1,11 +1,15 @@
 {
-  "version": "1.0.1",
+  "version": "1.1.0",
   "date": "06/11/2026",
   "notes": [
-    "Connexion aux mises à jour plus robuste"
+    "Nouveau nom : FINANCIA, avec le logo et les icônes du Brand Kit",
+    "Thème FINANCIA (par défaut) et 10 thèmes au choix, dont 2 clairs",
+    "Interface plus premium : panneaux, boutons, menu et graphiques retravaillés",
+    "Encadré de version dans le menu de gauche",
+    "Bouton « Quitter FINANCIA » quand l'appli s'ouvre dans un onglet du navigateur"
   ],
   "fichiers": {
-    "app.py": "7d1e72c02def4dcd86764a12deb00c8e1e1e70e3642c0f9a233df86f893f5bd7",
+    "app.py": "f534f50ebc6ac98b4d3109841292998c06337eef710bf8c742a3e2fee3dee06f",
     "bibliotheques/pypdf/__init__.py": "d7786f1b3cb2e52e28b1085f0ea150fa7f029baad252b29af7415c790871f7df",
     "bibliotheques/pypdf/_cmap.py": "8b3edbb61399302e966cbaadd6a863708c2b4de85bdb69813851ee9eea6de926",
     "bibliotheques/pypdf/_codecs/__init__.py": "574b0332eb98897f512be3fafb06e7724b81618c1f03014ca49823e13683dffe",
@@ -67,16 +71,17 @@
     "bibliotheques/pypdf/xmp.py": "0fb1996e355223d8ad669d289f16eb7e0ad9cd3314e8005cdb4c03defd876fea",
     "bourses.py": "df9e83589a4e75ee99462e7aa046ad43be3bc652fdb5115807602bc78118f6b7",
     "calculs.py": "9c6a14f02ac926822df16e29135a2730dd739a1f26d8bdd7506c44bdbf4097ee",
-    "db.py": "ad93f03627eef71c35d0e79d9769f5682e4b92ff08b6d922cf83a6b1ef2957b5",
+    "db.py": "4baa55c40454218f60992313402e340b73ba2432330585676fcd1b25ace319bc",
     "donnees.py": "78d0ab220962700659610991e364cde832c19ba2e9a567799e45fa9d74a42c5b",
     "marche.py": "7d874216bf044a2001e66d416aa39485ad788674b0feb1d814d43323d42e3bff",
+    "marque.py": "6b964919e482d984305449daed5a5256e25d825a25304ff222bb8a9e544132aa",
     "mise_a_jour.py": "096bf50422b3f777c35fb1793155b9e2a313974f42cc40749722c6a74cad8d9a",
     "releves.py": "11a4da6cff13a539cff8524d258adf3ce410b0bc06a34f179b9b71dfb802158c",
-    "style.py": "5e33a12dbfd4c1fbb0446ab475693375d9a83967a588883f3b722536dccaf483",
-    "vue_bourse.py": "9999ab2aa8d653f7c6f47287cdc7b682f68be57c8525694346ae6e84627eda41",
-    "vue_budget.py": "0a0cd9e3ab2635cb4c554e6a1dc9a0911dc857a9ed28b3bbf061bc1429f3f062",
+    "style.py": "81fc7b593a43878fd24f0fded900bceaac8c7b8418e9578dc4ac27fa34ffb552",
+    "vue_bourse.py": "e9f379c2cc8dd4f60052b0ae645c3028d000571cbf8afa77de3c7e62b589d539",
+    "vue_budget.py": "7b0cd49d3996d294a038f69a4879cbc28ff53a3df95e0334b83587a51fd02436",
     "vue_marche.py": "4394f8db882c3514a35b0a9a5cc60f7bfcf9172f00763758360744fbb721fb4b",
-    "vue_parametres.py": "3780e1e173b0f8038838aa90ef6dd5ee2c419db11d3fd15b8bd310be57e14198",
-    "vue_patrimoine.py": "7b7ed4052b3e92cc2d54a88cc54e802597a9923e264915e3b40c336f1d950762"
+    "vue_parametres.py": "62264929fe3d339d4dc704265a71521ec8efd74cd0ffc687e324cff72d64e35d",
+    "vue_patrimoine.py": "eddf1b14bf455c09537eda7ab4413ad0c96884f9547a9c3898e3b5c387c973fe"
   }
 }

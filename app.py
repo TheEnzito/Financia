@@ -1,4 +1,4 @@
-"""Mes finances : application personnelle de suivi du patrimoine, du budget et des investissements.
+"""FINANCIA : application personnelle de suivi du patrimoine, du budget et des investissements.
 
 Lancement :  streamlit run app.py
 """
@@ -74,6 +74,12 @@ import style as _style_theme  # noqa: E402
 try:
     _db_theme.initialiser()
     _nom_theme = _db_theme.lire_parametre("theme")
+    # Identité FINANCIA (Brand Kit) : appliquée une fois à la place de l'ancien thème par défaut
+    if _db_theme.lire_parametre("marque_appliquee") != "oui":
+        if _nom_theme in ("Sombre", "Noir & or", None, ""):
+            _nom_theme = "FINANCIA"
+            _db_theme.ecrire_parametre("theme", _nom_theme)
+        _db_theme.ecrire_parametre("marque_appliquee", "oui")
 except Exception:
     _nom_theme = None
 _style_theme.activer_theme(_nom_theme or _style_theme.THEME_DEFAUT)  # Paramètres › Thème
@@ -84,6 +90,7 @@ if any(_config.get_option(f"theme.{k}") != v for k, v in THEME.items()):
     st.rerun()  # le thème est transmis au navigateur au début de chaque exécution
 
 import db
+import marque
 import style
 import vue_bourse
 import vue_budget
@@ -91,9 +98,10 @@ import vue_parametres
 import vue_marche
 import vue_patrimoine
 
-st.set_page_config(page_title="Mes finances", page_icon="💶", layout="wide")
+st.set_page_config(page_title=style.NOM_APPLI, page_icon=marque.icone_appli(), layout="wide")
 db.initialiser()
 style.appliquer()
+style.logo()
 
 PAGES = {
     "patrimoine": st.Page(vue_patrimoine.page, title="Mon patrimoine", icon=":material/account_balance:",
@@ -112,4 +120,8 @@ navigation = st.navigation(list(PAGES.values()))
 with st.sidebar:
     style.note("Cours Yahoo Finance actualisés chaque minute (différé de 0 à 20 min selon la place).")
     vue_parametres.bandeau_mise_a_jour()  # nouvelle version disponible → bouton « Mettre à jour »
+    vue_parametres.encadre_version()
+    # Ouverte dans un onglet du navigateur (pas de fenêtre FINANCIA dédiée) : fermer l'onglet ne suffit pas.
+    if os.environ.get("FINANCIA_SANS_FENETRE") and st.button("Quitter FINANCIA", width="stretch"):
+        os._exit(0)
 navigation.run()

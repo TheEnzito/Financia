@@ -1,66 +1,144 @@
-"""Style visuel sombre et épuré, façon application de courtage : fond noir, panneaux plats
-à bordure fine, typographie dense, variations en vert et rouge, graphiques sobres."""
+"""Style visuel de FINANCIA : dix thèmes (huit sombres, deux clairs), panneaux à bordure fine et ombre douce,
+typographie dense, variations toujours en vert et rouge, graphiques sobres."""
 
 from __future__ import annotations
 
+import base64
 import html
 
 import plotly.graph_objects as go
 import streamlit as st
 
+import marque
+
 # Vert et rouge des chiffres : identiques dans tous les thèmes (hausse / baisse, gain / perte).
 VERT, ROUGE = "#1FC16B", "#F2454F"
 VERT_TEXTE, ROUGE_TEXTE = "#22C55E", "#F2454F"
 
+NOM_APPLI = "FINANCIA"
+
+
 # ------------------------------------------------------------------ thèmes
+def rgba(hex_couleur: str, alpha: float) -> str:
+    h = hex_couleur.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+def _melange(a: str, b: str, t: float) -> str:
+    """Couleur intermédiaire entre a et b (t = 0 → a, t = 1 → b)."""
+    ca = [int(a.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    cb = [int(b.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(ca, cb))
+
+
+def _theme(fond, panneau, panneau_2, bord, texte, texte_2, accent, accent_2, palette, bouton_texte,
+           clair=False, **forcer) -> dict:
+    """Construit un thème complet à partir de quelques couleurs de base (les autres en sont déduites)."""
+    t = dict(
+        FOND=fond, PANNEAU=panneau, PANNEAU_2=panneau_2, BORD=bord, TEXTE=texte, TEXTE_2=texte_2,
+        ACCENT=accent, ACCENT_2=accent_2, CLAIR=clair, PRIMAIRE=accent,
+        BOUTON_FOND=f"linear-gradient(135deg, {accent} 0%, {accent_2} 100%)",
+        BOUTON_SURVOL=f"linear-gradient(135deg, {_melange(accent, '#FFFFFF', 0.12)} 0%, "
+                      f"{_melange(accent_2, '#FFFFFF', 0.12)} 100%)",
+        BOUTON_TEXTE=bouton_texte,
+        ACTIF_FOND=rgba(accent, 0.16 if not clair else 0.12), ACTIF_TEXTE=texte,
+        SIDEBAR=_melange(fond, "#000000", 0.35) if not clair else panneau,
+        SURVOL=_melange(panneau_2, texte, 0.06), PISTE=_melange(panneau_2, texte, 0.09),
+        MENU=_melange(panneau_2, texte, 0.02) if not clair else panneau,
+        GRILLE=rgba(texte, 0.06), REPERE=_melange(fond, texte, 0.28),
+        LUEUR=rgba(accent, 0.09 if not clair else 0.10), LUEUR_2=rgba(accent_2, 0.04),
+        REFLET="rgba(255,255,255,0.025)" if not clair else "rgba(255,255,255,0.9)",
+        OMBRE=("inset 0 1px 0 rgba(255,255,255,0.035), 0 18px 40px -26px rgba(0,0,0,0.95)" if not clair else
+               "0 1px 2px rgba(15,23,42,0.05), 0 14px 34px -22px rgba(15,23,42,0.22)"),
+        VERT_TEXTE="#22C55E" if not clair else "#15803D", ROUGE_TEXTE="#F2454F" if not clair else "#DC2626",
+        HALO=rgba(accent, 0.13), RAYON="16px", NAV_BARRE=True,
+        PALETTE=list(palette),
+        ENVELOPPES={"PEA": palette[0], "CTO": palette[1], "Compte-titres": palette[1], "PEA-PME": palette[6],
+                    "Assurance vie": palette[4], "PER": palette[3]},
+    )
+    t.update(BLEU=palette[0], ORANGE=palette[2], VIOLET=palette[3], TURQUOISE=palette[4], ROSE=palette[5],
+             INDIGO=palette[6], GRIS=texte_2)
+    t.update(forcer)
+    return t
+
+
 THEMES = {
-    "Sombre": dict(
-        FOND="#0A0A0A", PANNEAU="#111111", PANNEAU_2="#161616", BORD="#232323",
-        TEXTE="#FFFFFF", TEXTE_2="#8B8B8B",
-        ACCENT=VERT,                         # point « en direct » des titres de panneau
-        BOUTON_FOND="#FFFFFF", BOUTON_SURVOL="#E6E6E6", BOUTON_TEXTE="#000000",
-        ACTIF_FOND="#262626", ACTIF_TEXTE="#FFFFFF",
-        PRIMAIRE="#1FC16B",                  # couleur Streamlit (cases, curseurs, sélection)
-        BLEU="#4C8DFF", ORANGE="#F5A524", VIOLET="#A78BFA", INDIGO="#6366F1", TURQUOISE="#2DD4BF",
-        ROSE="#F472B6", GRIS="#8B8B8B",
-        PALETTE=["#4C8DFF", "#1FC16B", "#F5A524", "#A78BFA", "#2DD4BF", "#F472B6", "#6366F1", "#C2A878",
-                 "#8B8B8B", "#7DD3FC", "#FACC15"],
+    "FINANCIA": _theme(
+        marque.INK_950, marque.INK_900, "#242320", marque.INK_800, marque.PAPER, marque.INK_500,
+        marque.GOLD, "#D6BC8C",
+        ["#8FA7C9", "#6FB3A8", "#C9A27A", "#9C8BC9", "#7FB0A0", "#D49BB0", "#7A86B8", "#C9BFA9",
+         "#8C877E", "#A3B18A", marque.GOLD], marque.INK_950,
+        # L'or reste un point, jamais une surface : boutons couleur papier, halos neutres, état actif or doux.
+        BOUTON_FOND=marque.PAPER, BOUTON_SURVOL="#F6F1E7", ACTIF_FOND=marque.GOLD_SOFT, ACTIF_TEXTE=marque.PAPER,
+        SIDEBAR="#121110", LUEUR="rgba(236,230,218,0.025)", LUEUR_2="rgba(236,230,218,0.0)",
+        HALO="rgba(236,230,218,0.035)", RAYON=marque.RAYON, NAV_BARRE=False),
+    "Sombre": _theme(
+        "#0A0A0A", "#111111", "#161616", "#232323", "#FFFFFF", "#8B8B8B", VERT, "#7EE2A8",
+        ["#4C8DFF", "#1FC16B", "#F5A524", "#A78BFA", "#2DD4BF", "#F472B6", "#6366F1", "#C2A878",
+         "#8B8B8B", "#7DD3FC", "#FACC15"], "#000000",
+        BOUTON_FOND="#FFFFFF", BOUTON_SURVOL="#E6E6E6", ACTIF_FOND="#262626", LUEUR="rgba(255,255,255,0.035)",
+        LUEUR_2="rgba(255,255,255,0.0)", SIDEBAR="#070707",
         ENVELOPPES={"PEA": "#4C8DFF", "CTO": "#64D2FF", "Compte-titres": "#64D2FF", "PEA-PME": "#6366F1",
-                    "Assurance vie": "#2DD4BF", "PER": "#A78BFA"},
-    ),
-    "Noir & or": dict(
-        FOND="#0B0A08", PANNEAU="#12100C", PANNEAU_2="#1A1711", BORD="#2E2819",
-        TEXTE="#F4EFE4", TEXTE_2="#A39A86",
-        ACCENT="#C9A45C",
-        BOUTON_FOND="linear-gradient(180deg, #E1C27E 0%, #C09A4E 100%)", BOUTON_SURVOL="#E8CD8F",
-        BOUTON_TEXTE="#0B0A08",
-        ACTIF_FOND="#2E2819", ACTIF_TEXTE="#E3C88A",
-        PRIMAIRE="#C9A45C",
-        BLEU="#C9A45C", ORANGE="#D9A441", VIOLET="#9C8BC9", INDIGO="#7A86B8", TURQUOISE="#6FB3A8",
-        ROSE="#D49BB0", GRIS="#8A8274",
-        PALETTE=["#C9A45C", "#8FA7C9", "#B07D62", "#9C8BC9", "#6FB3A8", "#D49BB0", "#7A86B8", "#E3C88A",
-                 "#8A8274", "#A3B18A", "#D9A441"],
-        ENVELOPPES={"PEA": "#C9A45C", "CTO": "#8FA7C9", "Compte-titres": "#8FA7C9", "PEA-PME": "#B07D62",
-                    "Assurance vie": "#6FB3A8", "PER": "#9C8BC9"},
-    ),
+                    "Assurance vie": "#2DD4BF", "PER": "#A78BFA"}),
+    "Minuit": _theme(
+        "#070B14", "#0D1321", "#121A2B", "#1E2940", "#EEF2FF", "#8A95B0", "#5B8CFF", "#9DB8FF",
+        ["#5B8CFF", "#38BDF8", "#F5A524", "#A78BFA", "#2DD4BF", "#F472B6", "#818CF8", "#94A3B8",
+         "#FACC15", "#7DD3FC", "#C084FC"], "#050A18"),
+    "Océan": _theme(
+        "#041214", "#0A1C1F", "#0F2428", "#1A363B", "#E8FBFA", "#82A9A8", "#2DD4BF", "#7DE8DA",
+        ["#2DD4BF", "#38BDF8", "#F5A524", "#818CF8", "#5EEAD4", "#F472B6", "#60A5FA", "#FDE68A",
+         "#94A3B8", "#C4B5FD", "#7DD3FC"], "#03201D"),
+    "Améthyste": _theme(
+        "#0C0814", "#140E20", "#1A1329", "#2B2040", "#F5F0FF", "#9B8FB5", "#A78BFA", "#D8C8FF",
+        ["#A78BFA", "#F472B6", "#FBBF24", "#60A5FA", "#2DD4BF", "#E879F9", "#818CF8", "#FDA4AF",
+         "#94A3B8", "#C4B5FD", "#67E8F9"], "#130A26"),
+    "Bordeaux": _theme(
+        "#0F0709", "#180C10", "#201117", "#341C24", "#FBF1F3", "#B0939A", "#D9A5A0", "#F3D2C1",
+        ["#D9A5A0", "#C084FC", "#F5A524", "#7DD3FC", "#E8B4BC", "#F9A8D4", "#A78BFA", "#FCD34D",
+         "#94A3B8", "#6EE7B7", "#B98AA0"], "#1A0A0D"),
+    "Graphite": _theme(
+        "#0E1013", "#15181D", "#1B1F25", "#2A2F37", "#F3F5F8", "#8D96A3", "#CBD5E1", "#F8FAFC",
+        ["#93C5FD", "#CBD5E1", "#F5A524", "#A78BFA", "#5EEAD4", "#F9A8D4", "#818CF8", "#FDE68A",
+         "#64748B", "#7DD3FC", "#D8B4FE"], "#0E1013"),
+    "Cuivre": _theme(
+        "#0F0B08", "#18120D", "#1F1812", "#33281E", "#FAF3EC", "#A8988A", "#D98B5F", "#F2BE94",
+        ["#D98B5F", "#7DD3FC", "#E7C27D", "#A78BFA", "#5EB8A8", "#F0A6CA", "#8FA7C9", "#C9B79C",
+         "#94A3B8", "#FCD34D", "#B9A0E8"], "#1A0F08"),
+    "Ivoire": _theme(
+        "#F7F4EE", "#FFFFFF", "#F3EFE7", "#E6DFD2", "#1C1914", "#776F62", "#A67C2E", "#C9A45C",
+        ["#A67C2E", "#3B6EA8", "#C2643A", "#7356B5", "#2A8C80", "#C04F86", "#4F5BA8", "#8A7F6C",
+         "#B8941F", "#4AA3C9", "#8E6BBF"], "#FFFFFF", clair=True),
+    "Neige": _theme(
+        "#F5F6F8", "#FFFFFF", "#F0F2F5", "#E3E6EB", "#0B0D12", "#6B7280", "#111827", "#4B5563",
+        ["#2563EB", "#0EA5E9", "#F59E0B", "#7C3AED", "#0D9488", "#DB2777", "#4F46E5", "#64748B",
+         "#CA8A04", "#06B6D4", "#9333EA"], "#FFFFFF", clair=True,
+        ACTIF_FOND="#FFFFFF", LUEUR="rgba(37,99,235,0.06)", LUEUR_2="rgba(124,58,237,0.04)"),
 }
-THEME_DEFAUT = "Sombre"
+THEME_DEFAUT = "FINANCIA"
+ANCIENS_THEMES = {"Noir & or": "FINANCIA"}  # thèmes retirés → remplaçant
 THEME_ACTIF = THEME_DEFAUT
 
 
 def activer_theme(nom: str) -> None:
     """Applique un thème : met à jour les couleurs utilisées par le CSS et les graphiques."""
-    global THEME_ACTIF, FOND, PANNEAU, PANNEAU_2, BORD, TEXTE, TEXTE_2, ACCENT, BOUTON_FOND, BOUTON_SURVOL
-    global BOUTON_TEXTE, ACTIF_FOND, ACTIF_TEXTE, BLEU, ORANGE, VIOLET, INDIGO, TURQUOISE, ROSE, GRIS, PALETTE
-    global COULEURS_PATRIMOINE, COULEURS_ENVELOPPES
+    global THEME_ACTIF, FOND, PANNEAU, PANNEAU_2, BORD, TEXTE, TEXTE_2, ACCENT, ACCENT_2, BOUTON_FOND
+    global BOUTON_SURVOL, BOUTON_TEXTE, ACTIF_FOND, ACTIF_TEXTE, BLEU, ORANGE, VIOLET, INDIGO, TURQUOISE, ROSE
+    global GRIS, PALETTE, COULEURS_PATRIMOINE, COULEURS_ENVELOPPES, VERT_TEXTE, ROUGE_TEXTE, CLAIR
+    global SIDEBAR, SURVOL, PISTE, MENU, GRILLE, REPERE, LUEUR, LUEUR_2, REFLET, OMBRE
+    nom = ANCIENS_THEMES.get(nom, nom)
     THEME_ACTIF = nom if nom in THEMES else THEME_DEFAUT
     t = THEMES[THEME_ACTIF]
     FOND, PANNEAU, PANNEAU_2, BORD = t["FOND"], t["PANNEAU"], t["PANNEAU_2"], t["BORD"]
-    TEXTE, TEXTE_2, ACCENT = t["TEXTE"], t["TEXTE_2"], t["ACCENT"]
+    TEXTE, TEXTE_2, ACCENT, ACCENT_2, CLAIR = t["TEXTE"], t["TEXTE_2"], t["ACCENT"], t["ACCENT_2"], t["CLAIR"]
     BOUTON_FOND, BOUTON_SURVOL, BOUTON_TEXTE = t["BOUTON_FOND"], t["BOUTON_SURVOL"], t["BOUTON_TEXTE"]
     ACTIF_FOND, ACTIF_TEXTE = t["ACTIF_FOND"], t["ACTIF_TEXTE"]
     BLEU, ORANGE, VIOLET, INDIGO = t["BLEU"], t["ORANGE"], t["VIOLET"], t["INDIGO"]
     TURQUOISE, ROSE, GRIS, PALETTE = t["TURQUOISE"], t["ROSE"], t["GRIS"], list(t["PALETTE"])
+    SIDEBAR, SURVOL, PISTE, MENU = t["SIDEBAR"], t["SURVOL"], t["PISTE"], t["MENU"]
+    GRILLE, REPERE, LUEUR, LUEUR_2, REFLET, OMBRE = (t["GRILLE"], t["REPERE"], t["LUEUR"], t["LUEUR_2"],
+                                                     t["REFLET"], t["OMBRE"])
+    VERT_TEXTE, ROUGE_TEXTE = t["VERT_TEXTE"], t["ROUGE_TEXTE"]
     COULEURS_PATRIMOINE = {
         "Bourse (portefeuille)": BLEU, "Placements hors application": INDIGO, "Épargne": VERT,
         "Comptes courants": TURQUOISE, "Immobilier": ORANGE, "Crypto": VIOLET, "Autres actifs": "#AC8E68",
@@ -72,9 +150,15 @@ def activer_theme(nom: str) -> None:
 def theme_streamlit() -> dict:
     """Options de thème Streamlit correspondant au thème actif (tableaux, champs, cases à cocher)."""
     t = THEMES[THEME_ACTIF]
-    return {"base": "dark", "primaryColor": t["PRIMAIRE"], "backgroundColor": t["FOND"],
-            "borderColor": t["BORD"], "baseRadius": "8px", "dataframeHeaderBackgroundColor": t["PANNEAU"],
-            "secondaryBackgroundColor": t["PANNEAU_2"], "textColor": t["TEXTE"]}
+    return {"base": "light" if t["CLAIR"] else "dark", "primaryColor": t["PRIMAIRE"],
+            "backgroundColor": t["FOND"], "borderColor": t["BORD"], "baseRadius": "10px",
+            "dataframeHeaderBackgroundColor": t["PANNEAU_2"], "secondaryBackgroundColor": t["PANNEAU_2"],
+            "textColor": t["TEXTE"]}
+
+
+def logo_svg(icone_seule: bool = False) -> str:
+    """Logo FINANCIA du Brand Kit (version fond sombre ou fond clair selon le thème), en image intégrée."""
+    return marque.symbole(CLAIR) if icone_seule else marque.logo(CLAIR)
 
 
 activer_theme(THEME_DEFAUT)
@@ -103,147 +187,220 @@ def _css() -> str:
     """Feuille de style du thème actif."""
     return f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root {{
-  color-scheme: dark;
+  color-scheme: {"light" if CLAIR else "dark"};
   --fond: {FOND};
   --panneau: {PANNEAU};
   --panneau-2: {PANNEAU_2};
   --bord: {BORD};
   --texte: {TEXTE};
   --texte-2: {TEXTE_2};
-  --rayon: 12px;
+  --accent: {ACCENT};
+  --accent-2: {ACCENT_2};
+  --accent-doux: {rgba(ACCENT, 0.16)};
+  --survol: {SURVOL};
+  --piste: {PISTE};
+  --menu: {MENU};
+  --ombre: {OMBRE};
+  --reflet: {REFLET};
+  --rayon: {THEMES[THEME_ACTIF]['RAYON']};
 }}
+::selection {{ background: {rgba(ACCENT, 0.30)}; }}
 
-.stApp {{ font-family: {POLICE}; color: var(--texte); background: var(--fond); }}
+/* Fond : aplat du thème éclairé par deux halos très discrets */
+.stApp {{
+  font-family: {POLICE}; color: var(--texte);
+  background: radial-gradient(1100px 520px at 100% -8%, {LUEUR}, transparent 65%),
+              radial-gradient(900px 520px at -10% 105%, {LUEUR_2}, transparent 60%), var(--fond);
+  background-attachment: fixed;
+  font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased;
+}}
 .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp h1, .stApp h2, .stApp h3,
 .stApp h4, [data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"] {{ color: var(--texte); }}
 [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {{ color: var(--texte-2) !important; }}
 [data-testid="stHeader"] {{ background: transparent; }}
-.block-container, [data-testid="stMainBlockContainer"] {{ padding-top: 1.6rem; max-width: 1360px; }}
-[data-testid="stVerticalBlock"] {{ gap: 0.75rem; }}
+.block-container, [data-testid="stMainBlockContainer"] {{ padding-top: 2rem; max-width: 1380px; }}
+[data-testid="stVerticalBlock"] {{ gap: 0.85rem; }}
 
-h1 {{ font-weight: 700 !important; letter-spacing: -0.02em; font-size: 1.75rem !important; }}
-h2, h3 {{ font-weight: 650 !important; letter-spacing: -0.01em; }}
+h1 {{ font-weight: 750 !important; letter-spacing: -0.035em; font-size: 2rem !important; line-height: 1.15 !important; }}
+h2, h3 {{ font-weight: 650 !important; letter-spacing: -0.02em; }}
 .stApp strong, .stApp b {{ font-weight: 650; }}
 
-/* Panneaux : st.container(key="verre_…") — aplats sombres à bordure fine */
+/* Barres de défilement fines */
+::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+::-webkit-scrollbar-track {{ background: transparent; }}
+::-webkit-scrollbar-thumb {{ background: var(--piste); border-radius: 10px; border: 2px solid var(--fond); }}
+::-webkit-scrollbar-thumb:hover {{ background: {REPERE}; }}
+
+/* Panneaux : st.container(key="verre_…") — surface légèrement éclairée, ombre douce */
 [class*="st-key-verre"] {{
-  background: var(--panneau);
+  background: linear-gradient(180deg, var(--reflet), transparent 140px), var(--panneau);
   border: 1px solid var(--bord);
   border-radius: var(--rayon);
-  padding: 16px 18px 14px;
+  padding: 18px 20px 16px;
+  box-shadow: var(--ombre);
 }}
-/* Titre de panneau : petit point vert « en direct » devant le premier texte en gras */
+/* Titre de panneau : petit point lumineux de la couleur du thème devant le premier texte en gras */
 [class*="st-key-verre"] > [data-testid="stElementContainer"]:first-of-type [data-testid="stMarkdownContainer"] > p:first-child > strong:first-child::before,
 [class*="st-key-verre"] > [data-testid="stLayoutWrapper"]:first-child [data-testid="stColumn"]:first-child > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:first-of-type [data-testid="stMarkdownContainer"] > p:first-child > strong:first-child::before {{
   content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-  background: {ACCENT}; margin-right: 8px; vertical-align: middle; transform: translateY(-1px);
+  background: linear-gradient(135deg, {ACCENT}, {ACCENT_2}); box-shadow: 0 0 0 3px {rgba(ACCENT, 0.16)};
+  margin-right: 10px; vertical-align: middle; transform: translateY(-1px);
 }}
 
 /* Indicateurs */
 [data-testid="stMetric"] {{
-  background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 10px; padding: 10px 14px;
+  background: linear-gradient(180deg, var(--reflet), transparent), var(--panneau-2);
+  border: 1px solid var(--bord); border-radius: 12px; padding: 12px 16px;
+  transition: border-color .2s ease;
 }}
-[data-testid="stMetricLabel"] p {{ color: var(--texte-2) !important; font-size: 0.8rem; }}
-[data-testid="stMetricValue"] {{ font-weight: 650; letter-spacing: -0.01em; color: var(--texte); font-size: 1.45rem; }}
+[data-testid="stMetric"]:hover {{ border-color: {rgba(ACCENT, 0.35)}; }}
+[data-testid="stMetricLabel"] p {{ color: var(--texte-2) !important; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.01em; }}
+[data-testid="stMetricValue"] {{ font-weight: 700; letter-spacing: -0.02em; color: var(--texte); font-size: 1.45rem;
+  font-variant-numeric: tabular-nums; }}
 
 /* Barre latérale */
-[data-testid="stSidebar"] {{ background: #070707; border-right: 1px solid var(--bord); }}
-[data-testid="stSidebarNavLink"], [data-testid="stSidebarNav"] a {{ border-radius: 8px !important; margin: 1px 6px; }}
-[data-testid="stSidebarNavLink"][aria-current="page"] {{ background: var(--panneau-2) !important; }}
-[data-testid="stSidebarNavLink"]:hover {{ background: #161616 !important; }}
+[data-testid="stSidebar"] {{ background: linear-gradient(180deg, {SIDEBAR} 0%, var(--fond) 100%); border-right: 1px solid var(--bord); }}
+[data-testid="stSidebarHeader"] {{ padding-top: 1.1rem; }}
+[data-testid="stSidebarHeader"] img {{ height: 30px !important; max-width: 100%; }}
+[data-testid="stSidebarNavLink"], [data-testid="stSidebarNav"] a {{
+  border-radius: 10px !important; margin: 2px 8px; transition: background .15s ease;
+}}
+[data-testid="stSidebarNavLink"] span {{ font-weight: 550; }}
+[data-testid="stSidebarNavLink"][aria-current="page"] {{
+  background: {ACTIF_FOND} !important; {'box-shadow: inset 3px 0 0 var(--accent);' if THEMES[THEME_ACTIF]['NAV_BARRE'] else ''}
+}}
+[data-testid="stSidebarNavLink"][aria-current="page"] span {{ color: var(--texte) !important; font-weight: 650; }}
+[data-testid="stSidebarNavLink"]:hover {{ background: var(--survol) !important; }}
+[data-testid="stSidebarNavSeparator"] {{ border-color: var(--bord) !important; }}
 
-/* Boutons : sombres et plats ; bouton principal blanc, texte noir */
+/* Icônes du menu : celles du Brand Kit */
+{marque.css_icones_navigation(TEXTE_2, TEXTE)}
+
+/* Boutons */
 .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button, [data-testid="stPopover"] > div > button {{
-  border-radius: 8px !important; padding: 0.4rem 1rem;
+  border-radius: 10px !important; padding: 0.42rem 1.05rem;
   border: 1px solid var(--bord) !important; background: var(--panneau-2); color: var(--texte);
   box-shadow: none; font-weight: 600; font-size: 0.88rem;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
 }}
-.stButton > button:hover, [data-testid="stPopover"] > div > button:hover {{ background: #1E1E1E; border-color: #2C2C2C !important; }}
+.stButton > button:hover, .stDownloadButton > button:hover, [data-testid="stPopover"] > div > button:hover {{
+  background: var(--survol); border-color: {rgba(ACCENT, 0.45)} !important;
+}}
+.stButton > button:active {{ transform: translateY(1px); }}
 [data-testid="stBaseButton-primary"], button[kind="primary"] {{
-  background: {BOUTON_FOND} !important; color: {BOUTON_TEXTE} !important; border: none !important; box-shadow: none !important;
+  background: {BOUTON_FOND} !important; color: {BOUTON_TEXTE} !important; border: none !important;
+  box-shadow: 0 8px 22px -12px {rgba(ACCENT, 0.75)} !important;
 }}
 [data-testid="stBaseButton-primary"] *, button[kind="primary"] * {{ color: {BOUTON_TEXTE} !important; }}
-[data-testid="stBaseButton-primary"]:hover, button[kind="primary"]:hover {{ background: {BOUTON_SURVOL} !important; }}
-button[kind="primary"]:disabled {{ background: #2A2A2A !important; }}
-button[kind="primary"]:disabled * {{ color: #6B6B6B !important; }}
+[data-testid="stBaseButton-primary"]:hover, button[kind="primary"]:hover {{
+  background: {BOUTON_SURVOL} !important; transform: translateY(-1px);
+}}
+button[kind="primary"]:disabled {{ background: var(--piste) !important; box-shadow: none !important; transform: none; }}
+button[kind="primary"]:disabled * {{ color: var(--texte-2) !important; }}
 
-/* Contrôles segmentés et pastilles : barre plate, segment actif plus clair */
-[data-testid="stButtonGroup"] {{ background: var(--panneau-2); border-radius: 8px; padding: 3px; width: fit-content; max-width: 100%; }}
+/* Contrôles segmentés et pastilles : barre plate, segment actif en relief */
+[data-testid="stButtonGroup"] {{
+  background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 12px; padding: 3px;
+  width: fit-content; max-width: 100%;
+}}
 [data-testid="stButtonGroup"] > div, [data-testid="stButtonGroup"] [role="radiogroup"],
 [data-testid="stButtonGroup"] [role="group"] {{ flex-wrap: wrap !important; overflow: visible !important; }}
 [data-testid="stButtonGroup"] button {{
-  border-radius: 6px !important; border: none !important; background: transparent !important;
+  border-radius: 9px !important; border: none !important; background: transparent !important;
   color: var(--texte-2) !important; font-weight: 600; font-size: 0.84rem; min-height: 30px;
+  transition: background .15s ease, color .15s ease;
 }}
+[data-testid="stButtonGroup"] button:hover {{ color: var(--texte) !important; }}
 [data-testid="stButtonGroup"] button p {{ color: inherit !important; }}
 [data-testid="stButtonGroup"] button[kind*="Active"], [data-testid="stButtonGroup"] button[aria-checked="true"] {{
   background: {ACTIF_FOND} !important; color: {ACTIF_TEXTE} !important;
+  box-shadow: inset 0 0 0 1px {rgba(ACCENT, 0.28)};
 }}
 
 /* Champs de saisie */
 [data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"],
 [data-baseweb="select"] > div, [data-testid="stNumberInputContainer"], [data-testid="stDateInput"] > div > div {{
-  border-radius: 8px !important;
+  border-radius: 10px !important;
 }}
 [data-baseweb="select"] > div, [data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"] {{
   background: var(--panneau-2) !important; border-color: var(--bord) !important;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}}
+[data-baseweb="input"]:focus-within, [data-baseweb="textarea"]:focus-within, [data-baseweb="select"] > div:focus-within {{
+  border-color: {rgba(ACCENT, 0.7)} !important; box-shadow: 0 0 0 3px {rgba(ACCENT, 0.14)};
 }}
 [data-baseweb="input"] input, [data-baseweb="textarea"] textarea, [data-baseweb="select"] * {{ color: var(--texte) !important; }}
 [data-testid="stNumberInputContainer"] {{ overflow: hidden; }}
-[data-baseweb="popover"] [role="listbox"], [data-baseweb="menu"] {{ background: #161616 !important; }}
-[data-testid="stPopoverBody"] {{ background: #121212 !important; border: 1px solid var(--bord); border-radius: 10px; }}
+[data-baseweb="popover"] [role="listbox"], [data-baseweb="menu"] {{ background: var(--menu) !important; }}
+[data-testid="stPopoverBody"] {{
+  background: var(--menu) !important; border: 1px solid var(--bord); border-radius: 14px; box-shadow: var(--ombre);
+}}
+[data-testid="stDialog"] [role="dialog"] {{ background: var(--panneau) !important; border: 1px solid var(--bord); border-radius: 18px; }}
 
 /* Onglets : même barre segmentée que les contrôles */
 [data-baseweb="tab-list"] {{
-  background: var(--panneau-2); border-radius: 8px; padding: 3px; gap: 2px; width: fit-content; max-width: 100%;
+  background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 12px; padding: 3px; gap: 2px;
+  width: fit-content; max-width: 100%;
 }}
-[data-baseweb="tab"] {{ border-radius: 6px !important; padding: 6px 22px !important; height: auto !important; }}
+[data-baseweb="tab"] {{ border-radius: 9px !important; padding: 7px 22px !important; height: auto !important;
+  transition: background .15s ease; }}
+[data-baseweb="tab"]:hover {{ background: var(--survol); }}
 [data-baseweb="tab"] p {{ color: var(--texte-2) !important; font-weight: 600; font-size: 0.88rem; }}
-[data-baseweb="tab"][aria-selected="true"] {{ background: {ACTIF_FOND}; }}
+[data-baseweb="tab"][aria-selected="true"] {{ background: {ACTIF_FOND}; box-shadow: inset 0 0 0 1px {rgba(ACCENT, 0.28)}; }}
 [data-baseweb="tab-list"] [aria-selected="true"] p {{ color: {ACTIF_TEXTE} !important; }}
 [data-baseweb="tab"][aria-selected="true"] p {{ color: var(--texte) !important; }}
 [data-baseweb="tab-highlight"], [data-baseweb="tab-border"] {{ display: none !important; }}
 
 /* Autres éléments */
-[data-testid="stExpander"] details {{ border-radius: 10px !important; background: var(--panneau); border: 1px solid var(--bord) !important; }}
-[data-testid="stDataFrame"], [data-testid="stDataFrameResizable"] {{ border-radius: 8px; overflow: hidden; }}
-[data-testid="stAlert"] > div {{ border-radius: 10px; }}
-[data-testid="stFileUploaderDropzone"] {{ border-radius: 10px; background: var(--panneau-2); }}
+[data-testid="stExpander"] details {{ border-radius: 12px !important; background: var(--panneau); border: 1px solid var(--bord) !important; }}
+[data-testid="stExpander"] summary:hover {{ background: var(--survol); border-radius: 12px; }}
+[data-testid="stDataFrame"], [data-testid="stDataFrameResizable"] {{ border-radius: 12px; overflow: hidden; }}
+[data-testid="stAlert"] > div {{ border-radius: 12px; }}
+[data-testid="stFileUploaderDropzone"] {{ border-radius: 12px; background: var(--panneau-2); border: 1px dashed {REPERE}; }}
+[data-testid="stToast"] {{ background: var(--menu) !important; border: 1px solid var(--bord); border-radius: 12px; }}
 hr {{ border-color: var(--bord) !important; }}
 
 /* Composants maison */
 .hero {{
-  background: var(--panneau); border: 1px solid var(--bord); border-radius: var(--rayon);
-  padding: 18px 20px 16px; margin-bottom: 12px;
+  position: relative; overflow: hidden;
+  background: radial-gradient(560px 240px at 0% 0%, {THEMES[THEME_ACTIF]['HALO']}, transparent 70%),
+              linear-gradient(180deg, var(--reflet), transparent 160px), var(--panneau);
+  border: 1px solid var(--bord); border-radius: calc(var(--rayon) + 4px);
+  padding: 22px 24px 20px; margin-bottom: 12px; box-shadow: var(--ombre);
 }}
-.hero-libelle {{ color: var(--texte-2) !important; font-size: 0.85rem; font-weight: 500; }}
+.hero::before {{
+  content: ""; position: absolute; left: 24px; right: 24px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, {rgba(ACCENT, 0.7)}, transparent);
+}}
+.hero-libelle {{ color: var(--texte-2) !important; font-size: 0.74rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.09em; }}
 .hero-valeur {{
-  font-size: clamp(2rem, 4.5vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em;
-  line-height: 1.1; margin: 2px 0 8px; font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 750; letter-spacing: -0.04em;
+  line-height: 1.1; margin: 6px 0 10px; font-variant-numeric: tabular-nums;
 }}
 /* Variations : simple texte coloré avec flèche, sans fond */
 .pilule {{
   display: inline-flex; align-items: center; gap: 4px; padding: 0 10px 0 0;
-  font-size: 0.88rem; font-weight: 600; font-variant-numeric: tabular-nums; background: none;
+  font-size: 0.88rem; font-weight: 650; font-variant-numeric: tabular-nums; background: none;
 }}
 .pilule.pos {{ color: {VERT_TEXTE} !important; }}
 .pilule.neg {{ color: {ROUGE_TEXTE} !important; }}
 .pilule.neutre {{ color: var(--texte-2) !important; }}
 .hero-pied {{ color: var(--texte-2) !important; font-size: 0.82rem; }}
-.puces {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }}
+.puces {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }}
 .puce {{
   display: inline-flex; align-items: center; gap: 8px; background: var(--panneau-2);
-  border: 1px solid var(--bord); border-radius: 8px; padding: 5px 12px; font-size: 0.84rem;
+  border: 1px solid var(--bord); border-radius: 999px; padding: 5px 13px; font-size: 0.84rem;
 }}
 .puce b {{ font-weight: 650; font-variant-numeric: tabular-nums; }}
 .point {{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }}
 
 .ligne-budget {{ margin: 0 0 12px; }}
-.ligne-budget .entete {{ display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; margin-bottom: 5px; }}
+.ligne-budget .entete {{ display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; margin-bottom: 6px; }}
 .ligne-budget .entete span:last-child {{ color: var(--texte-2) !important; font-variant-numeric: tabular-nums; }}
-.barre {{ height: 6px; border-radius: 3px; background: #1F1F1F; overflow: hidden; }}
+.barre {{ height: 6px; border-radius: 3px; background: var(--piste); overflow: hidden; }}
 .barre > span {{ display: block; height: 100%; border-radius: 3px; }}
 .barre .ok {{ background: {VERT}; }}
 .barre .attention {{ background: {ORANGE}; }}
@@ -252,22 +409,25 @@ hr {{ border-color: var(--bord) !important; }}
 
 /* Enveloppes (PEA, CTO…) */
 .enveloppe {{
-  background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 10px;
-  padding: 12px 14px; margin-bottom: 8px;
+  background: linear-gradient(180deg, var(--reflet), transparent), var(--panneau-2);
+  border: 1px solid var(--bord); border-radius: 14px;
+  padding: 13px 15px; margin-bottom: 8px; transition: border-color .2s ease;
 }}
-.enveloppe-nom {{ font-weight: 600; font-size: 0.85rem; color: var(--texte-2) !important; }}
-.enveloppe-valeur {{ font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 2px 0 4px;
+.enveloppe:hover {{ border-color: {rgba(ACCENT, 0.35)}; }}
+.enveloppe-nom {{ font-weight: 600; font-size: 0.78rem; color: var(--texte-2) !important;
+  text-transform: uppercase; letter-spacing: 0.06em; }}
+.enveloppe-valeur {{ font-size: 1.5rem; font-weight: 750; letter-spacing: -0.03em; margin: 2px 0 4px;
   font-variant-numeric: tabular-nums; }}
 .enveloppe .pilule {{ margin-top: 6px; }}
 
 /* Places boursières */
 .places {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin: 6px 0 10px; }}
-.place {{ background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; }}
+.place {{ background: var(--panneau-2); border: 1px solid var(--bord); border-radius: 12px; padding: 10px 12px; font-size: 0.82rem; }}
 .place-tete {{ display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }}
 .place-tete b {{ flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-.place-point {{ width: 7px; height: 7px; border-radius: 50%; background: #4A4A4A; flex: none; }}
+.place-point {{ width: 7px; height: 7px; border-radius: 50%; background: {REPERE}; flex: none; }}
 .place-etat {{ font-size: 0.75rem; font-weight: 600; color: var(--texte-2) !important; }}
-.place.ouvert .place-point, .place-puce.ouvert .place-point {{ background: {VERT}; }}
+.place.ouvert .place-point, .place-puce.ouvert .place-point {{ background: {VERT}; box-shadow: 0 0 0 3px {rgba(VERT, 0.18)}; }}
 .place.ouvert .place-etat {{ color: {VERT_TEXTE} !important; }}
 .place.pause .place-point, .place.férié .place-point,
 .place-puce.pause .place-point, .place-puce.férié .place-point {{ background: {ORANGE}; }}
@@ -280,6 +440,25 @@ hr {{ border-color: var(--bord) !important; }}
 .place-indice .pos {{ color: {VERT_TEXTE} !important; }}
 .place-indice .neg {{ color: {ROUGE_TEXTE} !important; }}
 .place-indice .neutre {{ color: var(--texte-2) !important; }}
+
+/* Encadré de version (menu latéral) */
+.version-appli {{ display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px;
+  border: 1px solid var(--bord); border-radius: 12px; background: var(--panneau-2); }}
+.version-appli img {{ width: 26px; height: 26px; flex: none; }}
+.version-appli .nom {{ font-weight: 750; font-size: 0.78rem; letter-spacing: 0.14em; }}
+.version-appli .note {{ margin: 0; font-size: 0.74rem; }}
+
+/* Sélecteur de thème */
+.apercu-theme {{ border-radius: 14px; padding: 10px; margin-bottom: 6px; position: relative; overflow: hidden; }}
+.apercu-theme.actif {{ outline: 2px solid var(--accent); outline-offset: 2px; }}
+.apercu-theme .barre-apercu {{ height: 6px; border-radius: 3px; margin: 8px 0 6px; }}
+.apercu-theme .ligne-apercu {{ display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }}
+.apercu-theme .nom-apercu {{ font-weight: 650; font-size: 0.86rem; }}
+.apercu-theme .valeur-apercu {{ font-weight: 750; font-size: 1.05rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }}
+.apercu-theme .pastilles {{ display: flex; gap: 4px; margin-top: 8px; }}
+.apercu-theme .pastilles span {{ width: 12px; height: 12px; border-radius: 50%; display: inline-block; }}
+.st-key-grille_themes [data-testid="stHorizontalBlock"] {{ flex-wrap: wrap; row-gap: 0.75rem; }}
+.st-key-grille_themes [data-testid="stColumn"] {{ min-width: min(150px, 100%); }}
 
 /* ---------- Garde-fous anti-chevauchement ---------- */
 /* Panneaux : marge basse suffisante pour que la dernière ligne ne touche jamais le bord. */
@@ -341,6 +520,12 @@ hr {{ border-color: var(--bord) !important; }}
 
 def appliquer() -> None:
     st.markdown(_css(), unsafe_allow_html=True)
+
+
+def logo() -> None:
+    """Logo FINANCIA en haut du menu latéral (pictogramme seul quand le menu est replié)."""
+    st.logo(logo_svg(), size="large", icon_image=logo_svg(icone_seule=True))
+
 
 
 def verre(nom: str):
@@ -502,17 +687,11 @@ def graphique(fig: go.Figure, hauteur: int = 360, legende: bool = True) -> go.Fi
         barcornerradius=3, bargap=0.3,
     )
     fig.update_xaxes(showgrid=False, zeroline=False, linecolor=BORD, title=None, ticks="", showspikes=True,
-                     spikecolor="#3A3A3A", spikethickness=1, spikedash="dot", spikemode="across",
+                     spikecolor=REPERE, spikethickness=1, spikedash="dot", spikemode="across",
                      automargin=True)  # Plotly incline seul les étiquettes trop serrées
-    fig.update_yaxes(gridcolor="rgba(255,255,255,0.05)", zeroline=False, title=None, separatethousands=True,
+    fig.update_yaxes(gridcolor=GRILLE, zeroline=False, title=None, separatethousands=True,
                      side="right", automargin=True)
     return fig
-
-
-def rgba(hex_couleur: str, alpha: float) -> str:
-    h = hex_couleur.lstrip("#")
-    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
-    return f"rgba({r},{g},{b},{alpha})"
 
 
 def courbe_cours(x, y, nom: str = "", hausse: bool = True, hauteur: int = 340) -> go.Figure:

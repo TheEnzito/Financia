@@ -48,6 +48,16 @@ def bandeau_mise_a_jour() -> None:
             installer_mise_a_jour(res)
 
 
+def encadre_version() -> None:
+    """Dans le menu latéral : la version installée de l'application."""
+    locale = mise_a_jour.version_locale()
+    date = locale.get("date")
+    st.markdown(f'<div class="version-appli"><img src="{style.logo_svg(icone_seule=True)}" alt="">'
+                f'<div><div class="nom">{style.NOM_APPLI}</div>'
+                f'<div class="note">Version {locale.get("version", "—")}' + (f" · {date}" if date else "")
+                + "</div></div></div>", unsafe_allow_html=True)
+
+
 def section_mises_a_jour() -> None:
     locale = mise_a_jour.version_locale()
     with style.verre("mises_a_jour"):
@@ -81,22 +91,38 @@ def section_mises_a_jour() -> None:
                    "Les fichiers remplacés sont sauvegardés dans le dossier _sauvegardes de l'application.")
 
 
-def _changer_theme() -> None:
-    nom = st.session_state.get("choix_theme")
-    if nom:
-        db.ecrire_parametre("theme", nom)
-        style.activer_theme(nom)
+def _styles_apercus() -> str:
+    """Couleurs de texte des miniatures, par classes (Streamlit ignore les couleurs « !important » en ligne)."""
+    regles = []
+    for i, (nom, t) in enumerate(style.THEMES.items()):
+        c = f".apercu-{i}"
+        regles += [f"{c} .ap-texte {{ color: {t['TEXTE']} !important; }}",
+                   f"{c} .ap-texte-2 {{ color: {t['TEXTE_2']} !important; font-size: 0.7rem; }}",
+                   f"{c} .ap-pos {{ color: {t['VERT_TEXTE']} !important; font-size: 0.76rem; }}",
+                   f"{c} .ap-neg {{ color: {t['ROUGE_TEXTE']} !important; font-size: 0.76rem; }}"]
+    return "<style>" + "\n".join(regles) + "</style>"
 
 
-def _apercu_theme(nom: str) -> str:
+def _apercu_theme(nom: str, actif: bool) -> str:
+    """Miniature d'un thème : fond, carte, valeur, barre d'accent, variations vert/rouge, palette."""
     t = style.THEMES[nom]
-    pastilles = "".join(f'<span style="display:inline-block;width:18px;height:18px;border-radius:50%;'
-                        f'background:{c};margin-right:4px;border:1px solid {t["BORD"]}"></span>'
-                        for c in [t["FOND"], t["PANNEAU_2"], t["ACCENT"], t["PALETTE"][1], style.VERT, style.ROUGE])
-    return (f'<div style="background:{t["PANNEAU"]};border:1px solid {t["BORD"]};border-radius:10px;padding:10px 12px;'
-            f'margin-bottom:6px"><b style="color:{t["TEXTE"]} !important">{nom}</b>'
-            f'<div style="margin-top:6px">{pastilles}</div>'
-            f'<span class="pilule pos">▲ +2,45 %</span> <span class="pilule neg">▼ −1,10 %</span></div>')
+    i = list(style.THEMES).index(nom)
+    pastilles = "".join(f'<span style="background:{c}"></span>' for c in t["PALETTE"][:6])
+    return (f'<div class="apercu-theme apercu-{i}{" actif" if actif else ""}" style="background:{t["FOND"]};'
+            f'border:1px solid {t["BORD"]}">'
+            f'<div style="background:{t["PANNEAU"]};border:1px solid {t["BORD"]};border-radius:10px;padding:9px 10px">'
+            f'<div class="ligne-apercu"><span class="nom-apercu ap-texte">{nom}</span>'
+            f'<span class="ap-texte-2">{"Clair" if t["CLAIR"] else "Sombre"}</span></div>'
+            f'<div class="valeur-apercu ap-texte">24 580 €</div>'
+            f'<span class="pilule ap-pos">▲ +2,45 %</span>'
+            f'<span class="pilule ap-neg">▼ −1,10 %</span>'
+            f'<div class="barre-apercu" style="background:linear-gradient(90deg,{t["ACCENT"]},{t["ACCENT_2"]})"></div>'
+            f'<div class="pastilles">{pastilles}</div></div></div>')
+
+
+def _choisir_theme(nom: str) -> None:
+    db.ecrire_parametre("theme", nom)
+    style.activer_theme(nom)
 
 
 def page() -> None:
@@ -105,11 +131,17 @@ def page() -> None:
         st.markdown("**Thème de l'application**")
         noms = list(style.THEMES)
         actuel = db.lire_parametre("theme") or style.THEME_DEFAUT
-        colonnes = st.columns(len(noms))
-        for col, nom in zip(colonnes, noms):
-            col.markdown(_apercu_theme(nom), unsafe_allow_html=True)
-        st.segmented_control("Thème", noms, default=actuel if actuel in noms else noms[0], key="choix_theme",
-                             on_change=_changer_theme, label_visibility="collapsed")
+        actuel = actuel if actuel in noms else style.THEME_DEFAUT
+        par_ligne = 5
+        st.markdown(_styles_apercus(), unsafe_allow_html=True)
+        with st.container(key="grille_themes"):
+            for debut in range(0, len(noms), par_ligne):
+                colonnes = st.columns(par_ligne)
+                for col, nom in zip(colonnes, noms[debut:debut + par_ligne]):
+                    with col:
+                        st.markdown(_apercu_theme(nom, nom == actuel), unsafe_allow_html=True)
+                        st.button("✓ Thème actif" if nom == actuel else "Choisir", key=f"theme_{nom}",
+                                  width="stretch", disabled=nom == actuel, on_click=_choisir_theme, args=(nom,))
         style.note("Les hausses et gains restent toujours en vert, les baisses et pertes en rouge, quel que soit "
                    "le thème.")
     with style.verre("parametres"):

@@ -36,7 +36,7 @@ PARAMETRES_DEFAUT = {
     "categories_revenus": "Salaire,Prime,Revenus locatifs,Remboursement,Autre",
     "revenu_prevu": "0",
     "groupes_budget": "Besoins,Envies,Épargne",
-    "theme": "Sombre",
+    "theme": "FINANCIA",
 }
 ENVELOPPE_DEFAUT = "Compte-titres"
 

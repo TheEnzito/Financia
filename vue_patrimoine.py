@@ -138,7 +138,7 @@ def vue_ensemble(p: dict | None, pat: dict, base: str) -> None:
         positifs = composition[composition > 0]
         fig = go.Figure(go.Pie(labels=positifs.index, values=positifs.values, hole=0.66, sort=False,
                                marker=dict(colors=[style.couleur_patrimoine(c) for c in positifs.index],
-                                           line=dict(color="#111111", width=3)),
+                                           line=dict(color=style.PANNEAU, width=3)),
                                texttemplate="%{percent:.2%}",
                                hovertemplate="%{label}<br>%{value:,.0f} · %{percent:.2%}<extra></extra>"))
         fig.add_annotation(text=f"<b>{fmt(positifs.sum(), base, 0)}</b><br><span style='font-size:11px'>d'actifs</span>",

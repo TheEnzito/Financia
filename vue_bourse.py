@@ -45,7 +45,7 @@ def _donut(labels: list[str], valeurs: list[float], couleurs: list[str], survols
     """Camembert « anneau » avec le total au centre."""
     fig = go.Figure(go.Pie(
         labels=labels, values=valeurs, hole=0.64, sort=False, direction="clockwise",
-        marker=dict(colors=couleurs, line=dict(color="#111111", width=2)),
+        marker=dict(colors=couleurs, line=dict(color=style.PANNEAU, width=2)),
         customdata=survols, hovertemplate="%{customdata}<extra></extra>",
         texttemplate="<b>%{label}</b><br>%{percent:.2%}", textposition="inside",
         insidetextorientation="horizontal"))
@@ -54,7 +54,7 @@ def _donut(labels: list[str], valeurs: list[float], couleurs: list[str], survols
     fig.update_layout(height=hauteur, margin=dict(l=4, r=4, t=4, b=4), showlegend=False, separators=", ",
                       paper_bgcolor="rgba(0,0,0,0)", uniformtext=dict(minsize=10, mode="hide"),
                       font=dict(family=style.POLICE, color=style.TEXTE, size=12),
-                      hoverlabel=dict(bgcolor="#161616", font=dict(color=style.TEXTE)))
+                      hoverlabel=dict(bgcolor=style.PANNEAU_2, font=dict(color=style.TEXTE)))
     st.plotly_chart(fig, config=SANS_BARRE, key=cle)
     # Légende compacte : couleur, nom et part de chaque élément (lisible même en fenêtre étroite).
     total = sum(valeurs) or 1
@@ -111,7 +111,7 @@ def camemberts_portefeuilles(p: dict | None, cle: str, hauteur: int = 240) -> No
                 if cash:
                     labels.append("Espèces")
                     valeurs.append(cash)
-                    couleurs.append("#4A4A4A")
+                    couleurs.append(style.REPERE)
                     survols.append(f"Espèces non investies<br>{fmt(cash, base, 2)}")
                 st.markdown(f"**{env}** · {fmt_pct(totaux[env] / total * 100, signe=False, dec=2)} du total")
                 _donut(labels, valeurs, couleurs, survols, fmt(totaux[env], base, 0),
@@ -185,7 +185,7 @@ def apercu_cours(p: dict, env: str, ticker: str, nom: str, ligne, direct) -> Non
                 o = visibles[visibles["type"] == type_]
                 if not o.empty:
                     fig.add_scatter(x=o["date"], y=o["prix"], mode="markers", name="Achats" if type_ == "ACHAT" else "Ventes",
-                                    marker=dict(symbol=symbole, size=11, color=couleur, line=dict(width=1, color="#111111")),
+                                    marker=dict(symbol=symbole, size=11, color=couleur, line=dict(width=1, color=style.PANNEAU)),
                                     hovertemplate="%{x|%d/%m/%Y} : %{y:.2f}<extra></extra>")
             bas = min(float(serie.min()), float(ligne["pru"]))
             haut = max(float(serie.max()), float(ligne["pru"]))
