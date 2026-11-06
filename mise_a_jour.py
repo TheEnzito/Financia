@@ -82,9 +82,10 @@ def _contexte_ssl() -> ssl.SSLContext:
             return ssl.create_default_context(cafile=chemin)
     try:
         import certifi
-        if str(certifi.where()).isascii():
-            return ssl.create_default_context(cafile=certifi.where())
-    except ImportError:
+        chemin = str(certifi.where())
+        if chemin.isascii() and Path(chemin).exists():
+            return ssl.create_default_context(cafile=chemin)
+    except (ImportError, AttributeError, OSError):
         pass
     return ssl.create_default_context()
 

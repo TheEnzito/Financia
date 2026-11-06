@@ -1,9 +1,8 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "date": "06/11/2026",
   "notes": [
-    "Première version partagée : patrimoine, budget, portefeuille, marchés, import de relevés, thèmes",
-    "Bouton de mise à jour intégré"
+    "Connexion aux mises à jour plus robuste"
   ],
   "fichiers": {
     "app.py": "7d1e72c02def4dcd86764a12deb00c8e1e1e70e3642c0f9a233df86f893f5bd7",
@@ -71,7 +70,7 @@
     "db.py": "ad93f03627eef71c35d0e79d9769f5682e4b92ff08b6d922cf83a6b1ef2957b5",
     "donnees.py": "78d0ab220962700659610991e364cde832c19ba2e9a567799e45fa9d74a42c5b",
     "marche.py": "7d874216bf044a2001e66d416aa39485ad788674b0feb1d814d43323d42e3bff",
-    "mise_a_jour.py": "07eaf351a4ab498f1ab7f5a0ddc11c8c660e363bbc5b8b2e0846f727772a7454",
+    "mise_a_jour.py": "096bf50422b3f777c35fb1793155b9e2a313974f42cc40749722c6a74cad8d9a",
     "releves.py": "11a4da6cff13a539cff8524d258adf3ce410b0bc06a34f179b9b71dfb802158c",
     "style.py": "5e33a12dbfd4c1fbb0446ab475693375d9a83967a588883f3b722536dccaf483",
     "vue_bourse.py": "9999ab2aa8d653f7c6f47287cdc7b682f68be57c8525694346ae6e84627eda41",
