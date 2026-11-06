@@ -16,6 +16,7 @@ import db
 import donnees
 import releves
 import style
+import vues_tableaux
 from style import fmt, fmt_pct, fmt_signe
 
 
@@ -658,7 +659,11 @@ def onglet_mois_dernier(mvts: pd.DataFrame, base: str) -> None:
         st.markdown("**Plus grosses dépenses du mois**")
         ops = m["operations"]
         top = ops[ops["type"] == "DEPENSE"].sort_values("montant", ascending=False).head(10)
-        st.dataframe(top[["date", "categorie", "description", "montant"]], hide_index=True, column_config={
+        cols_top = ["date", "categorie", "description", "montant"]
+        vue = vues_tableaux.barre("budget_top_depenses", {"date": "Date", "categorie": "Catégorie",
+                                                          "description": "Libellé", "montant": "Montant"}, cols_top)
+        st.dataframe(vues_tableaux.trier(top[cols_top], vue), hide_index=True, column_order=vue["colonnes"],
+                     column_config={
             "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"), "categorie": "Catégorie",
             "description": "Libellé", "montant": st.column_config.NumberColumn(f"Montant ({base})", format="%.2f")})
 
@@ -733,8 +738,13 @@ def onglet_tendances(mvts: pd.DataFrame, base: str) -> None:
     with style.verre("tableau_tendances"):
         st.markdown("**Tendance par catégorie**")
         t = calculs.tendances_categories(piv)
+        cols_t = ["categorie", "historique", "moyenne", "dernier_mois", "ecart_pct", "mois_en_cours", "tendance"]
+        vue = vues_tableaux.barre("budget_tendances", {
+            "categorie": "Catégorie", "historique": "Évolution", "moyenne": "Moyenne / mois",
+            "dernier_mois": "Dernier mois", "ecart_pct": "Écart à la moyenne", "mois_en_cours": "Mois en cours",
+            "tendance": "Tendance"}, cols_t, non_triables=("historique",))
         st.dataframe(
-            t[["categorie", "historique", "moyenne", "dernier_mois", "ecart_pct", "mois_en_cours", "tendance"]],
+            vues_tableaux.trier(t[cols_t], vue), column_order=vue["colonnes"],
             hide_index=True, column_config={
                 "categorie": "Catégorie",
                 "historique": st.column_config.LineChartColumn("Évolution", y_min=0),
@@ -981,8 +991,12 @@ def onglet_mouvements(mvts: pd.DataFrame, base: str) -> None:
             annees = sorted(mvts["date"].dt.year.unique(), reverse=True)
             annee = c2.selectbox("Année", annees, label_visibility="collapsed")
             sel = mvts[mvts["date"].dt.year == annee]
-            st.dataframe(sel.assign(type=sel["type"].map(TYPES_MOUVEMENT).fillna(sel["type"])),
-                         hide_index=True, column_config={
+            libelles_mv = {"date": "Date", "type": "Type", "categorie": "Catégorie", "montant": "Montant",
+                           "description": "Description"}
+            cols_mv = [c for c in libelles_mv if c in sel.columns]
+            vue = vues_tableaux.barre("budget_mouvements", libelles_mv, cols_mv)
+            st.dataframe(vues_tableaux.trier(sel.assign(type=sel["type"].map(TYPES_MOUVEMENT).fillna(sel["type"])), vue),
+                         hide_index=True, column_order=vue["colonnes"], column_config={
                 "id": None, "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
                 "type": "Type", "categorie": "Catégorie",
                 "montant": st.column_config.NumberColumn(f"Montant ({base})", format="%.2f"),

@@ -92,6 +92,10 @@ _ICONES = {
         '<path d="M3.8 17.6 C6.2 14.8 8 12.6 10 13.8 C12 15 13.4 12.8 15.2 10.2 C16.2 8.8 17 8 17.8 7.6"/>'
         '<path d="M3.6 20.6 C9 20.2 14.6 20.8 20.4 20.4"/>',
         '<circle cx="20" cy="6.4" r="2.1"/>'),
+    "devises": (
+        '<path d="M16.4 6.6 C14.2 4.6 10.2 4.8 8.4 7.8 C6.9 10.4 7.2 14.4 9.6 16.4 C11.8 18.2 14.9 17.9 16.8 16"/>'
+        '<path d="M4.8 10.4 C8 10.2 11 10.3 13.6 10.2"/><path d="M4.8 13.6 C7.8 13.4 10.6 13.5 13.2 13.4"/>',
+        '<circle cx="19.4" cy="5" r="2.1"/>'),
     "parametres": (
         '<path d="M3.6 6.6 C8.4 6.2 14 6.9 20.4 6.4"/><path d="M3.6 12.2 C9 11.8 14.6 12.5 20.4 12"/><path d="M3.6 '
         '17.7 C8.6 17.3 14.2 18 20.4 17.5"/><circle cx="15.2" cy="6.55" r="2.3" fill="{c}"/><circle cx="13" '
@@ -111,7 +115,8 @@ def icone(nom: str, couleur: str) -> str:
 
 # Page de l'application (fin de l'adresse du lien de navigation) → icône du kit
 ICONES_PAGES = {"/": "patrimoine", "/budget": "budget", "/portefeuille": "portefeuilles",
-                "/transactions": "transactions", "/marches": "marches", "/parametres": "parametres"}
+                "/transactions": "transactions", "/marches": "marches", "/devises": "devises",
+                "/parametres": "parametres"}
 
 
 def css_icones_navigation(couleur_repos: str, couleur_active: str) -> str:

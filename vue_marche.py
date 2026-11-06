@@ -15,6 +15,7 @@ import calculs
 import db
 import donnees
 import style
+import vues_tableaux
 from style import fmt, fmt_pct
 
 SANS_BARRE = {"displayModeBar": False}
@@ -119,7 +120,14 @@ def _tableau(df: pd.DataFrame, cle: str, hauteur: int | None = None) -> str | No
             libelle_capi = f"Capitalisation ({unite})"
     if types.nunique(dropna=True) <= 1:
         aff = aff.drop(columns="type")  # inutile si tout le tableau est du même type
-    aff = aff.reset_index(drop=True)
+    # Vue enregistrée (colonnes, tri) : une par type de tableau (Top 50, crypto, ETF, listes, recherche)
+    groupe = next((g for g in ("top", "crypto", "etf", "liste", "recherche") if cle.startswith(f"table_{g}")), cle)
+    libelles = {"rang": "#", "nom": "Entreprise", "ticker": "Ticker", "type": "Type", "place": "Place",
+                "cours": "Cours", "devise": "Devise", "variation_pct": "Variation du jour",
+                "capi": libelle_capi or "Capitalisation", "tendance": "30 jours", "etat": "Marché"}
+    libelles = {c: l for c, l in libelles.items() if c in aff.columns}
+    vue = vues_tableaux.barre(f"marches_{groupe}", libelles, list(libelles), non_triables=("tendance",))
+    aff = vues_tableaux.trier(aff, vue).reset_index(drop=True)
 
     def couleur(v):
         if v is None or v != v or v == 0:
@@ -133,6 +141,7 @@ def _tableau(df: pd.DataFrame, cle: str, hauteur: int | None = None) -> str | No
     styler = aff.style.map(couleur, subset=["variation_pct"]).format(formats, na_rep="–")
     ev = st.dataframe(
         styler, hide_index=True, on_select="rerun", selection_mode=style.SELECTION_CLIC, key=cle,
+        column_order=vue["colonnes"],
         height=hauteur or min(38 + 35 * len(aff), 740),
         column_config={
             "rang": st.column_config.NumberColumn("#", width=40),

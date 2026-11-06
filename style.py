@@ -441,6 +441,24 @@ hr {{ border-color: var(--bord) !important; }}
 .place-indice .neg {{ color: {ROUGE_TEXTE} !important; }}
 .place-indice .neutre {{ color: var(--texte-2) !important; }}
 
+/* Étiquettes des listes à choix multiples : neutres (l'accent reste un point, jamais une surface) */
+[data-baseweb="tag"], [data-testid="stMultiSelectTagsContainer"] > span > span {{
+  background: var(--piste) !important; border: 1px solid var(--bord) !important; border-radius: 8px !important;
+  color: var(--texte) !important; }}
+[data-baseweb="tag"] *, [data-testid="stMultiSelectTagsContainer"] > span > span * {{
+  color: var(--texte) !important; fill: var(--texte-2) !important; }}
+
+/* Calculateur de change : bouton d'inversion compact, conversions rapides */
+.st-key-calc_inverser button {{ padding: 0.4rem 0 !important; min-width: 0; width: 100%; font-size: 1.1rem; }}
+.conversions {{ width: 100%; border-collapse: collapse; font-size: 0.84rem; font-variant-numeric: tabular-nums;
+  margin: 4px 0 6px; }}
+.conversions th {{ color: var(--texte-2) !important; font-weight: 600; text-align: right; padding: 4px 8px;
+  border-bottom: 1px solid var(--bord); }}
+.conversions td {{ text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--bord); white-space: nowrap; }}
+.conversions th:nth-child(3), .conversions td:nth-child(3) {{ border-left: 1px solid var(--bord); }}
+.conversions tr:last-child td {{ border-bottom: none; }}
+@media (max-width: 700px) {{ .conversions {{ font-size: 0.76rem; }} .conversions td, .conversions th {{ padding: 4px 4px; }} }}
+
 /* Encadré de version (menu latéral) */
 .version-appli {{ display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px;
   border: 1px solid var(--bord); border-radius: 12px; background: var(--panneau-2); }}

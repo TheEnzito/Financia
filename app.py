@@ -94,6 +94,7 @@ import marque
 import style
 import vue_bourse
 import vue_budget
+import vue_devises
 import vue_parametres
 import vue_marche
 import vue_patrimoine
@@ -112,6 +113,7 @@ PAGES = {
     "transactions": st.Page(vue_bourse.page_transactions, title="Transactions", icon=":material/swap_horiz:",
                             url_path="transactions"),
     "marches": st.Page(vue_marche.page, title="Marchés", icon=":material/show_chart:", url_path="marches"),
+    "devises": st.Page(vue_devises.page, title="Devises", icon=":material/currency_exchange:", url_path="devises"),
     "parametres": st.Page(vue_parametres.page, title="Paramètres", icon=":material/settings:",
                           url_path="parametres"),
 }

@@ -16,6 +16,7 @@ import db
 import donnees
 import style
 import vue_marche
+import vues_tableaux
 from style import fmt, fmt_pct, fmt_signe
 
 SANS_BARRE = {"displayModeBar": False}
@@ -268,13 +269,22 @@ def _synthese_en_direct() -> None:
                        + (f" dont {fmt(cash, base, 2)} d'espèces" if cash else "")
                        + f" · titres investis {fmt(investi, base, 0)} · plus-value "
                        f"{fmt_signe(pv, base, 0)} ({fmt_pct(pv / investi * 100 if investi else None)})")
-        actives = actives.sort_values(["enveloppe", "valeur_base"], ascending=[True, False])
-        style.note("Calculé automatiquement depuis vos opérations (page Transactions) et les cours en direct, "
-                   "actualisé chaque minute. Cliquez sur une ligne pour afficher l'aperçu du cours.")
-        actives = actives.reset_index(drop=True)
         colonnes = ["enveloppe", "nom", "type", "ticker", "quantite", "pru", "cours", "devise", "var_jour_pct",
                     "cout_revient_base", "valeur_base", "pv_latente_base", "pv_latente_pct", "dividendes_base",
                     "gain_total_base", "poids_pct", "xirr_pct"]
+        libelles = {"enveloppe": "Enveloppe", "nom": "Titre", "type": "Type", "ticker": "Ticker",
+                    "quantite": "Quantité", "pru": "PRU", "cours": "Cours", "devise": "Devise",
+                    "var_jour_pct": "Variation du jour", "cout_revient_base": f"Investi ({base})",
+                    "valeur_base": f"Valeur ({base})", "pv_latente_base": f"Plus-value ({base})",
+                    "pv_latente_pct": "Plus-value %", "dividendes_base": f"Dividendes ({base})",
+                    "gain_total_base": f"Gain total ({base})", "poids_pct": "Poids",
+                    "xirr_pct": "Rendement annualisé"}
+        vue = vues_tableaux.barre("positions", libelles, colonnes)
+        actives = actives.sort_values(["enveloppe", "valeur_base"], ascending=[True, False])
+        actives = vues_tableaux.trier(actives, vue)
+        style.note("Calculé automatiquement depuis vos opérations (page Transactions) et les cours en direct, "
+                   "actualisé chaque minute. Cliquez sur une ligne pour afficher l'aperçu du cours.")
+        actives = actives.reset_index(drop=True)
         # Vert = favorable (hausse, plus-value, cours au-dessus du PRU), rouge = défavorable.
         tableau = style.tableau_gains(
             actives[colonnes],
@@ -283,6 +293,7 @@ def _synthese_en_direct() -> None:
         selection = st.dataframe(
             tableau,
             hide_index=True, key="table_positions", on_select="rerun", selection_mode=style.SELECTION_CLIC,
+            column_order=vue["colonnes"],
             column_config={
                 "enveloppe": "Enveloppe", "nom": "Titre", "type": "Type", "ticker": "Ticker",
                 # Pas de format ici : l'affichage (▲ / ▼, couleurs, virgule française) vient du Styler.
@@ -463,10 +474,14 @@ def page_portefeuille() -> None:
     soldees = pos[pos["quantite"] == 0]
     if not soldees.empty:
         with st.expander(f"Positions soldées ({len(soldees)})"):
+            cols_soldees = ["enveloppe", "ticker", "devise", "pv_realisee", "dividendes", "frais", "xirr_pct"]
+            vue = vues_tableaux.barre("positions_soldees", {
+                "enveloppe": "Enveloppe", "ticker": "Titre", "devise": "Devise", "pv_realisee": "Plus-value réalisée",
+                "dividendes": "Dividendes", "frais": "Frais payés", "xirr_pct": "Rendement annualisé"}, cols_soldees)
             st.dataframe(style.tableau_gains(
-                soldees[["enveloppe", "ticker", "devise", "pv_realisee", "dividendes", "frais", "xirr_pct"]],
+                vues_tableaux.trier(soldees[cols_soldees], vue),
                 ["pv_realisee", "xirr_pct"], FORMATS_POSITIONS),
-                         hide_index=True, column_config={
+                         hide_index=True, column_order=vue["colonnes"], column_config={
                              "enveloppe": "Enveloppe", "ticker": "Titre", "devise": "Devise",
                              "pv_realisee": st.column_config.Column("Plus-value réalisée"),
                              "dividendes": st.column_config.Column("Dividendes"),
@@ -671,8 +686,13 @@ def page_transactions() -> None:
         with style.verre("historique_tx"):
             st.markdown("**Historique**")
             affichage = tx.sort_values(["date", "heure", "id"], ascending=False)
-            colonnes = ["date", "heure"] + [c for c in affichage.columns if c not in ("date", "heure")]
-            st.dataframe(affichage[colonnes], hide_index=True, column_config={
+            libelles_tx = {"date": "Date", "heure": "Heure", "type": "Type", "ticker": "Titre",
+                           "quantite": "Quantité", "prix": "Prix", "frais": "Frais", "devise": "Devise",
+                           "note": "Note", "enveloppe": "Enveloppe"}
+            colonnes = [c for c in libelles_tx if c in affichage.columns]
+            vue = vues_tableaux.barre("historique_transactions", libelles_tx, colonnes)
+            affichage = vues_tableaux.trier(affichage, vue)
+            st.dataframe(affichage[colonnes + ["id"]], hide_index=True, column_order=vue["colonnes"], column_config={
                 "id": None, "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
                 "heure": "Heure",
                 "type": "Type", "ticker": "Titre",
