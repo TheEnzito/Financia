@@ -113,24 +113,42 @@ def calculateur(base: str) -> None:
 
 
 # ------------------------------------------------------------------- graphique
+def _serie(ticker: str, conf: tuple, maintenant: pd.Timestamp) -> pd.Series:
+    if conf[0] == "intraday":
+        s = donnees.histo_intraday((ticker,), conf[1], conf[2])
+        s = s[ticker].dropna() if ticker in s.columns else pd.Series(dtype=float)
+        return s[s.index >= maintenant - conf[3]]
+    debut = maintenant.normalize() - conf[1]
+    s = donnees.histo((ticker,), debut.strftime("%Y-%m-%d"), False)
+    s = s[ticker].dropna() if ticker in s.columns else pd.Series(dtype=float)
+    return s[s.index >= debut]
+
+
+def _historique(de: str, vers: str, conf: tuple, maintenant: pd.Timestamp) -> pd.Series:
+    """Historique de la paire de → vers ; passe par le dollar si la paire directe n'est pas cotée."""
+    serie = _serie(f"{de}{vers}=X", conf, maintenant)
+    if not serie.empty or "USD" in (de, vers):
+        return serie
+    a, b = _serie(f"{de}USD=X", conf, maintenant), _serie(f"USD{vers}=X", conf, maintenant)
+    if a.empty or b.empty:
+        return pd.Series(dtype=float)
+    index = a.index.union(b.index)
+    return (a.reindex(index).ffill() * b.reindex(index).ffill()).dropna()
+
+
 def graphique_paire(base: str, devise: str, direct: float | None, var_jour: float | None) -> None:
-    ticker = f"{base}{devise}=X"
     with style.verre("graphique_devises"):
         c1, c2 = st.columns([2, 3], vertical_alignment="center")
         c1.markdown(f"**{base} / {devise}** · {html.escape(MONNAIES.get(devise, devise))}")
         periode = c2.segmented_control("Période", list(PERIODES), default="1 mois", key="periode_devises",
                                        label_visibility="collapsed") or "1 mois"
+        if base == devise:
+            st.info("Choisissez deux devises différentes dans le calculateur pour afficher leur graphique.")
+            return
         conf = PERIODES[periode]
         maintenant = pd.Timestamp.now()
-        if conf[0] == "intraday":
-            serie = donnees.histo_intraday((ticker,), conf[1], conf[2])
-            serie = serie[ticker].dropna() if ticker in serie.columns else pd.Series(dtype=float)
-            serie = serie[serie.index >= maintenant - conf[3]]
-        else:
-            debut = maintenant.normalize() - conf[1]
-            serie = donnees.histo((ticker,), debut.strftime("%Y-%m-%d"), False)
-            serie = serie[ticker].dropna() if ticker in serie.columns else pd.Series(dtype=float)
-            serie = serie[serie.index >= debut]
+        serie = _historique(base, devise, conf, maintenant)
+        if conf[0] != "intraday":
             if direct is not None and len(serie):  # dernier point = cours en direct
                 serie.index = pd.DatetimeIndex(serie.index).astype("datetime64[ns]")
                 serie = pd.concat([serie, pd.Series([float(direct)],
@@ -149,8 +167,8 @@ def graphique_paire(base: str, devise: str, direct: float | None, var_jour: floa
         fig.update_traces(hovertemplate="%{x|%d/%m/%Y %H:%M} : %{y:.4f}<extra></extra>", selector=dict(name=f"{base}/{devise}"))
         fig.update_xaxes(tickformat={"1 j": "%H:%M", "5 ans": "%m/%Y"}.get(periode, "%d/%m"))
         st.plotly_chart(fig, config=SANS_BARRE, key="courbe_devise")
-        style.note(f"Une hausse signifie que l'{'euro' if base == 'EUR' else base} se renforce face à "
-                   f"{MONNAIES.get(devise, devise).lower()} : vos {base} valent plus de {devise}.")
+        style.note(f"Une hausse signifie que le {base} se renforce face au {devise} : vos {base} valent plus de "
+                   f"{devise}. Le graphique suit les devises choisies dans le calculateur.")
 
 
 # ----------------------------------------------------------------------- tableau
@@ -162,8 +180,9 @@ def _choisir_ligne() -> None:
         lignes = [c[0] for c in cellules] or list(ev["selection"]["rows"] or [])
     except (TypeError, KeyError):
         return
-    if lignes and lignes[0] < len(ordre):
-        st.session_state["paire_devises"] = ordre[lignes[0]]
+    if lignes and lignes[0] < len(ordre):  # le calculateur (et donc le graphique) passe sur cette paire
+        st.session_state["calc_de"] = st.session_state.get("_base_devises", "EUR")
+        st.session_state["calc_vers"] = ordre[lignes[0]]
 
 
 def tableau_taux(base: str, suivies: list[str], cot: pd.DataFrame) -> None:
@@ -197,24 +216,22 @@ def tableau_taux(base: str, suivies: list[str], cot: pd.DataFrame) -> None:
                                     "taux": f"1 {base} =", "inverse": f"Inverse (1 unité en {base})",
                                     "variation_pct": "Variation du jour",
                                     "tendance": st.column_config.LineChartColumn("30 jours", width="small")})
-        style.note("Cliquez sur une ligne pour afficher son graphique. Actualisé automatiquement chaque minute.")
+        style.note("Cliquez sur une ligne pour l'afficher dans le calculateur et le graphique. "
+                   "Actualisé automatiquement chaque minute.")
 
 
 # -------------------------------------------------------------------------- page
 @st.fragment(run_every=donnees.ACTUALISATION_S)
 def _en_direct(base: str, suivies: list[str]) -> None:
     cot = donnees.cotations(tuple(f"{base}{c}=X" for c in suivies))
-    paire = st.session_state.get("paire_devises")
-    if paire not in suivies:
-        paire = suivies[0]
-    r = cot[cot["ticker"] == f"{base}{paire}=X"]
-    direct = float(r["cours"].iloc[0]) if not r.empty else None
-    var_jour = float(r["variation_pct"].iloc[0]) if not r.empty else None
+    st.session_state["_base_devises"] = base
     g, d = st.columns([5, 7])
     with g:
         calculateur(base)
+    de, vers = st.session_state["calc_de"], st.session_state["calc_vers"]
+    direct, var_jour = taux(de, vers)
     with d:
-        graphique_paire(base, paire, direct, var_jour)
+        graphique_paire(de, vers, direct, var_jour)
     tableau_taux(base, suivies, cot)
 
 

@@ -1,8 +1,8 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "date": "09/11/2026",
   "notes": [
-    "Transactions : recherche de titre toujours visible, avec les noms complets des valeurs ; un clic sur un résultat remplit le ticker"
+    "Devises : le graphique suit les devises choisies dans le calculateur (y compris après inversion) ; un clic dans le tableau des taux met à jour le calculateur et le graphique"
   ],
   "fichiers": {
     "app.py": "2f419d04b15d17c72b038c6b212eb72e122315751c4ccc9a8ffa69098daa07b2",
@@ -76,7 +76,7 @@
     "style.py": "ef5c3f97ec9016fbf57f974e242680df07238f7ce2ccdbf96fa51b5e54de5e89",
     "vue_bourse.py": "085e0b8bb9903e6bb399b469792188a4611b37c67540f21fb7dec836e42024ef",
     "vue_budget.py": "51d0447210f8d8ea897afc7a0e505fbc0674c3ccdbfa27e45426fd639be2f55b",
-    "vue_devises.py": "f30aa1aa0dcba5cf40e9eb6a42966ba0d4f8991b5f5fab0a57582941e72bfcd7",
+    "vue_devises.py": "27849ee698b1d7a73ff3b018099350836f2ff91d22ad64f6391d7450d818cea7",
     "vue_marche.py": "291d40691bb8980484cd72dad9401419c03b356c7667a5146799a075f122ff13",
     "vue_parametres.py": "62264929fe3d339d4dc704265a71521ec8efd74cd0ffc687e324cff72d64e35d",
     "vue_patrimoine.py": "eddf1b14bf455c09537eda7ab4413ad0c96884f9547a9c3898e3b5c387c973fe",
