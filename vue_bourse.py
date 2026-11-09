@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import html
 from datetime import date
 
@@ -544,9 +545,36 @@ def page_portefeuille() -> None:
 
 
 # ============================================================ TRANSACTIONS
-def _utiliser_titre_recherche() -> None:
-    if st.session_state.get("recherche_tx"):
-        st.session_state["ticker_tx"] = st.session_state["recherche_tx"]
+def _utiliser_resultat(cle: str, tickers: list[str]) -> None:
+    """Clic sur une ligne des résultats : le ticker est reporté dans le champ « Ticker »."""
+    lignes = st.session_state[cle].selection.rows
+    if lignes and lignes[0] < len(tickers):
+        st.session_state["ticker_tx"] = tickers[lignes[0]]
+
+
+def _recherche_titre_tx() -> None:
+    """Recherche toujours visible, en pleine largeur, avec les noms complets des titres."""
+    texte = st.text_input("Rechercher un titre", key="recherche_tx_texte",
+                          placeholder="Nom ou ticker : LVMH, Amundi S&P 500, Apple, MSCI World, Bitcoin…",
+                          help="Cliquez sur un résultat pour remplir le ticker ci-dessous. "
+                               "Vous pouvez aussi saisir directement le ticker.").strip()
+    if len(texte) < 2:
+        return
+    resultats = donnees.recherche(texte)
+    if not resultats:
+        st.caption("Aucun résultat : essayez un autre nom, ou saisissez directement le ticker.")
+        return
+    table = pd.DataFrame([{"Nom": r["nom"], "Ticker": r["ticker"], "Place": r["place"], "Type": r["type"]}
+                          for r in resultats])
+    cle = f"resultats_tx_{texte}"
+    st.dataframe(table, hide_index=True, width="stretch", key=cle, selection_mode="single-row",
+                 on_select=functools.partial(_utiliser_resultat, cle, table["Ticker"].tolist()),
+                 height=min(len(table), 6) * 35 + 38,
+                 column_config={"Nom": st.column_config.TextColumn("Nom", width="large"),
+                                "Ticker": st.column_config.TextColumn("Ticker", width="small"),
+                                "Place": st.column_config.TextColumn("Place", width="small"),
+                                "Type": st.column_config.TextColumn("Type", width="small")})
+    st.caption("Cliquez sur une ligne pour sélectionner le titre.")
 
 
 def page_transactions() -> None:
@@ -568,6 +596,7 @@ def page_transactions() -> None:
             "Enveloppe", enveloppes, key="enveloppe_tx",
             help="Les enveloppes se créent et se gèrent dans Portefeuille › Mes enveloppes. "
                  "Chacune a ses propres positions, prix de revient et espèces.") or enveloppes[0]
+        _recherche_titre_tx()
         c1, c2, c3 = st.columns(3)
         type_ = c1.segmented_control("Type", calculs.TYPES_TRANSACTION, default="ACHAT", key="type_operation",
                                      format_func={"ACHAT": "Achat", "VENTE": "Vente", "DIVIDENDE": "Dividende"}.get) \
@@ -575,10 +604,6 @@ def page_transactions() -> None:
         st.session_state.setdefault("ticker_tx", "")
         ticker = c2.text_input("Ticker (Yahoo Finance)", key="ticker_tx",
                                placeholder="ex. MC.PA, AAPL, CW8.PA").strip().upper()
-        with c2.popover("Rechercher par nom", width="stretch"):
-            vue_marche.choisir_titre("recherche_tx")
-            st.button("Utiliser ce titre", on_click=_utiliser_titre_recherche, type="primary",
-                      disabled=not st.session_state.get("recherche_tx"))
         d1, d2 = c3.columns([3, 2])
         jour = d1.date_input("Date", date.today(), format="DD/MM/YYYY", max_value=date.today())
         heure = d2.time_input("Heure", value=None, step=60, key="heure_tx",

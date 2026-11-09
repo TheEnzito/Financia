@@ -1,10 +1,8 @@
 {
-  "version": "1.1.1",
-  "date": "06/11/2026",
+  "version": "1.1.2",
+  "date": "09/11/2026",
   "notes": [
-    "Nouvelle page Devises : cours des monnaies en direct, graphique par paire et calculateur de change (avec frais)",
-    "Vues de tableau enregistrées : colonnes, ordre et tri mémorisés d'une session à l'autre (Portefeuille, Transactions, Budget, Marchés)",
-    "Icône Devises dans le menu et petites retouches visuelles"
+    "Transactions : recherche de titre toujours visible, avec les noms complets des valeurs ; un clic sur un résultat remplit le ticker"
   ],
   "fichiers": {
     "app.py": "2f419d04b15d17c72b038c6b212eb72e122315751c4ccc9a8ffa69098daa07b2",
@@ -76,7 +74,7 @@
     "mise_a_jour.py": "096bf50422b3f777c35fb1793155b9e2a313974f42cc40749722c6a74cad8d9a",
     "releves.py": "11a4da6cff13a539cff8524d258adf3ce410b0bc06a34f179b9b71dfb802158c",
     "style.py": "ef5c3f97ec9016fbf57f974e242680df07238f7ce2ccdbf96fa51b5e54de5e89",
-    "vue_bourse.py": "7c522bd50187c884f186b0bd8d70a00517cdd1e7870fefab556ff1cfecd08b49",
+    "vue_bourse.py": "085e0b8bb9903e6bb399b469792188a4611b37c67540f21fb7dec836e42024ef",
     "vue_budget.py": "51d0447210f8d8ea897afc7a0e505fbc0674c3ccdbfa27e45426fd639be2f55b",
     "vue_devises.py": "f30aa1aa0dcba5cf40e9eb6a42966ba0d4f8991b5f5fab0a57582941e72bfcd7",
     "vue_marche.py": "291d40691bb8980484cd72dad9401419c03b356c7667a5146799a075f122ff13",
